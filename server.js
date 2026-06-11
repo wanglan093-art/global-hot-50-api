@@ -2,6 +2,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
 const { fetchNews } = require('./lib/fetch-news');
 
 const app = express();
@@ -59,6 +60,34 @@ app.get('/api/trending/:domain/:category', async function(req, res) {
 // Health
 app.get('/api/health', function(_, res) {
   res.json({ status: 'ok', version: '2.0.0', uptime: process.uptime() });
+});
+
+// Translate (powered by MyMemory free API)
+app.post('/api/translate', function(req, res) {
+  const text = req.body.text;
+  if (!text || text.length > 500) {
+    return res.status(400).json({ error: 'Text required, max 500 chars' });
+  }
+
+  const qs = 'q=' + encodeURIComponent(text) + '&langpair=en|zh';
+  http.get('http://api.mymemory.translated.net/get?' + qs, function(apiRes) {
+    var body = '';
+    apiRes.on('data', function(c) { body += c; });
+    apiRes.on('end', function() {
+      try {
+        var data = JSON.parse(body);
+        res.json({
+          original: text,
+          translated: data.responseData ? data.responseData.translatedText : text,
+          match: data.responseData ? data.responseData.match : 0
+        });
+      } catch (e) {
+        res.status(500).json({ error: 'Translation failed' });
+      }
+    });
+  }).on('error', function() {
+    res.status(502).json({ error: 'Translation service unavailable' });
+  });
 });
 
 // 404
