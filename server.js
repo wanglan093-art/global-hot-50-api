@@ -2,7 +2,7 @@
 
 const express = require('express');
 const cors = require('cors');
-const { calcHotScore, loadData, data } = require('./lib/data');
+const { fetchNews } = require('./lib/fetch-news');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,20 +14,26 @@ app.use(express.json());
 app.get('/', function(_, res) {
   res.json({
     name: 'Global Hot 50 API',
-    version: '1.0.0',
-    endpoints: '/api/trending/{domestic|international}/{finance|politics|military}',
-    health: '/api/health'
+    version: '2.0.0',
+    endpoint: '/api/trending/{domestic|international}/{finance|politics|military}',
+    health: '/api/health',
+    sources: {
+      domestic: 'Juhe 聚合数据 (v.juhe.cn)',
+      international: 'NewsAPI (newsapi.org)'
+    },
+    cache: '30 minutes'
   });
 });
 
-// Trending
-app.get('/api/trending/:domain/:category', function(req, res) {
-  var domain = req.params.domain;
-  var cat = req.params.category;
-  var key = domain + '_' + cat;
-  var raw = data[key];
+// Trending - with real API fallback to mock
+app.get('/api/trending/:domain/:category', async function(req, res) {
+  const domain = req.params.domain;
+  const cat = req.params.category;
 
-  if (!raw) {
+  // Validate
+  const validDomains = ['domestic', 'international'];
+  const validCats = ['finance', 'politics', 'military'];
+  if (!validDomains.includes(domain) || !validCats.includes(cat)) {
     return res.status(404).json({
       error: 'Invalid domain/category',
       valid: [
@@ -37,17 +43,22 @@ app.get('/api/trending/:domain/:category', function(req, res) {
     });
   }
 
-  res.json({
-    domain: domain,
-    category: cat,
-    updated_at: Date.now(),
-    items: loadData(domain, cat, raw)
-  });
+  try {
+    const result = await fetchNews(domain, cat);
+    res.json(result);
+  } catch (err) {
+    console.error('Trending error:', err.message);
+    res.status(502).json({
+      error: 'Failed to fetch news from source',
+      domain, category: cat,
+      message: err.message
+    });
+  }
 });
 
 // Health
 app.get('/api/health', function(_, res) {
-  res.json({ status: 'ok', version: '1.0.0', uptime: process.uptime() });
+  res.json({ status: 'ok', version: '2.0.0', uptime: process.uptime() });
 });
 
 // 404
@@ -58,7 +69,9 @@ app.use(function(_, res) {
 // Local dev only
 if (require.main === module) {
   app.listen(PORT, '0.0.0.0', function() {
-    console.log('Global Hot 50 API server running on port ' + PORT);
+    console.log('Global Hot 50 API v2.0 server running on port ' + PORT);
+    console.log('Domestic: Juhe 聚合数据');
+    console.log('International: NewsAPI');
   });
 }
 
