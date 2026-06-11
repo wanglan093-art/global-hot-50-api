@@ -19,7 +19,7 @@ app.get('/', function(_, res) {
     endpoint: '/api/trending/{domestic|international}/{finance|politics|military}',
     health: '/api/health',
     sources: {
-      domestic: 'Juhe 聚合数据 (v.juhe.cn)',
+      domestic: 'CCTV 央视新闻 (news.cctv.com)',
       international: 'NewsAPI (newsapi.org)'
     },
     cache: '30 minutes'
@@ -98,8 +98,8 @@ app.use(function(_, res) {
 // Local dev only
 if (require.main === module) {
   app.listen(PORT, '0.0.0.0', function() {
-    console.log('Global Hot 50 API v2.0 server running on port ' + PORT);
-    console.log('Domestic: Juhe 聚合数据');
+    console.log('Global Hot 50 API v2.1 server running on port ' + PORT);
+    console.log('Domestic: CCTV 央视新闻');
     console.log('International: NewsAPI');
   });
 }
