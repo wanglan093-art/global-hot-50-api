@@ -1,6 +1,6 @@
 'use strict';
 
-const { calcHotScore, loadData, data } = require('./lib/data');
+const { fetchNews } = require('./lib/fetch-news');
 
 module.exports = async function handler(req, res) {
   // CORS
@@ -14,66 +14,36 @@ module.exports = async function handler(req, res) {
   }
 
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-
-  // Parse pathname from URL
   const urlStr = req.url || '/';
   const questionIdx = urlStr.indexOf('?');
   const pathname = questionIdx >= 0 ? urlStr.slice(0, questionIdx) : urlStr;
 
-  // Root
   if (pathname === '/' || pathname === '' || pathname === '/index') {
     res.statusCode = 200;
     return res.end(JSON.stringify({
-      name: 'Global Hot 50 API',
-      version: '1.0.0',
-      status: 'running',
-      endpoints: {
-        health: '/api/health',
-        trending: '/api/trending/{domestic|international}/{finance|politics|military}'
-      },
-      examples: [
-        '/api/trending/domestic/finance',
-        '/api/trending/international/military'
-      ]
+      name: 'Global Hot 50 API', version: '2.0.0',
+      endpoints: { health: '/api/health', trending: '/api/trending/{domain}/{category}' },
+      sources: { domestic: 'Juhe 聚合数据', international: 'NewsAPI' }
     }));
   }
 
-  // Health check
   if (pathname === '/api/health') {
     res.statusCode = 200;
-    return res.end(JSON.stringify({
-      status: 'ok',
-      version: '1.0.0',
-      time: new Date().toISOString()
-    }));
+    return res.end(JSON.stringify({ status: 'ok', version: '2.0.0', time: new Date().toISOString() }));
   }
 
-  // Trending endpoint
   const match = pathname.match(/^\/api\/trending\/(domestic|international)\/(finance|politics|military)$/);
   if (match) {
-    const domain = match[1];
-    const cat = match[2];
-    const key = domain + '_' + cat;
-    const raw = data[key];
-
-    if (!raw) {
-      res.statusCode = 404;
-      return res.end(JSON.stringify({ error: 'Category not found' }));
+    try {
+      const result = await fetchNews(match[1], match[2]);
+      res.statusCode = 200;
+      return res.end(JSON.stringify(result));
+    } catch (err) {
+      res.statusCode = 502;
+      return res.end(JSON.stringify({ error: 'Fetch failed', message: err.message }));
     }
-
-    res.statusCode = 200;
-    return res.end(JSON.stringify({
-      domain: domain,
-      category: cat,
-      updated_at: Date.now(),
-      items: loadData(domain, cat, raw)
-    }));
   }
 
-  // 404
   res.statusCode = 404;
-  res.end(JSON.stringify({
-    error: 'Not found',
-    hint: 'Try /, /api/health, or /api/trending/{domain}/{category}'
-  }));
+  res.end(JSON.stringify({ error: 'Not found' }));
 };
