@@ -329,13 +329,86 @@ async function fetchNews(){
   }catch(e){console.error(e);return false}
 }
 
+// --- Client-side international fallback ---
+const NEWSAPI_CLIENT_KEY='2f0b960a820e4900b2583fc103d808c5';
+const NEWSAPI_SRC_MAP={
+  finance:'bloomberg,reuters,financial-times,the-wall-street-journal,cnbc',
+  politics:'bbc-news,the-guardian-uk,associated-press,al-jazeera-english,politico,the-washington-post,time',
+  military:'reuters,bbc-news,associated-press,al-jazeera-english'
+};
+
+async function translateText(text){
+  if(!text||text.length<3) return text;
+  try{
+    const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(text)+'&langpair=en|zh-CN');
+    const d=await r.json();
+    return d.responseData?.translatedText||text;
+  }catch(e){return text}
+}
+
+async function fetchClientNews(){
+  const today=new Date().toISOString().split('T')[0];
+  const sources=NEWSAPI_SRC_MAP[state.cat]||NEWSAPI_SRC_MAP.politics;
+  try{
+    const url='https://newsapi.org/v2/everything?sources='+sources+'&pageSize=30&sortBy=publishedAt&from='+today+'&apiKey='+NEWSAPI_CLIENT_KEY;
+    const r=await fetch(url,{signal:AbortSignal.timeout(20000)});
+    if(!r.ok) return false;
+    const json=await r.json();
+    if(json.status!=='ok'||!json.articles) return false;
+
+    const items=[];
+    const seen=new Set();
+    for(let i=0;i<json.articles.length;i++){
+      const a=json.articles[i];
+      if(!a.title||a.title==='[Removed]') continue;
+      const key=a.title.slice(0,30).toLowerCase();
+      if(seen.has(key)) continue;
+      seen.add(key);
+
+      const minsAgo=Math.round((Date.now()-new Date(a.publishedAt).getTime())/60000);
+      if(minsAgo>48*60) continue;
+
+      // Translate title
+      let title=a.title;
+      try{ title=await translateText(a.title); }catch(e){}
+
+      items.push({
+        title:title, source:a.source?.name||'NewsAPI', trust:'A',
+        heat:Math.max(30,100-i*3), minsAgo:Math.max(1,minsAgo),
+        url:a.url||'', cluster:null, debunk:false,
+        sourceFull:a.source?.name||'NewsAPI', sourceColor:'#1A73E8', sourceLabel:(a.source?.name||'API').slice(0,4),
+        hotScore:Math.max(30,100-i*3), hotBreakdown:{timeFresh:90,propagation:70,authority:90,srcWeight:80}, rank:i+1
+      });
+    }
+
+    if(items.length>0){
+      state.data[panelKey()]=items;
+      state.lastUpd=Date.now();
+      return true;
+    }
+    return false;
+  }catch(e){console.error('Client fetch error:',e);return false}
+}
+
 async function loadAll(){
   const pk=panelKey();
   $('#main').innerHTML='<div class=loading><div class=spinner></div><div class=loading-t>🔥 正在计算热度，抓取实时新闻…</div></div>';
   const ok=await fetchNews();
   if(!ok){
+    // If server unreachable AND international domain, try client-side fetch
+    if(state.domain==='international'){
+      $('#main').innerHTML='<div class=loading><div class=spinner></div><div class=loading-t>🌍 服务器超时，正在通过本地网络直连国际源…</div></div>';
+      const clientOk=await fetchClientNews();
+      if(clientOk){ render(); return; }
+    }
     $('#main').innerHTML='<div class=error-bar>⚠️ 无法连接服务器<br><small>请检查网络后重试</small><br><br><button onclick=location.reload()>🔄 重新加载</button></div>';
     return;
+  }
+  // Server OK but international data is empty — try client-side supplement
+  const items=state.data[pk]||[];
+  if(state.domain==='international' && items.length<10){
+    const clientOk=await fetchClientNews();
+    if(clientOk){ render(); return; }
   }
   render();
 }
