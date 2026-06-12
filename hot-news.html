@@ -138,6 +138,12 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 .btn-g{background:var(--cobalt);color:#fff;border-color:var(--cobalt)}.btn-g:hover{background:#1557b0}
 
 @media(max-width:1100px){.panels{grid-template-columns:repeat(2,1fr)}}
+.mobile-domain{display:none}
+.m-tab,.m-dom{padding:6px 14px;border-radius:20px;font-size:12px;border:1px solid var(--border);background:var(--card);white-space:nowrap;cursor:pointer;color:var(--text2)}
+.m-tab.active{background:var(--cobalt);color:#fff;border-color:var(--cobalt)}
+.m-dom.active.d{background:var(--dom);color:#fff;border-color:var(--dom)}
+.m-dom.active.i{background:var(--intl);color:#fff;border-color:var(--intl)}
+
 @media(max-width:700px){
   .panels{grid-template-columns:1fr}
   .tb-inner{padding:0 14px;height:48px}
@@ -145,12 +151,15 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
   .domain-toggle,.cat-tabs{display:none}
   .filter-bar{padding:8px 14px}
   .main{padding:0 14px 40px}
-  .mobile-tabs{display:flex;overflow-x:auto;gap:4px;padding:8px 14px;scrollbar-width:none}
+  .mobile-domain{display:flex;gap:4px;padding:4px 14px 0}
+  .mobile-tabs{display:flex;overflow-x:auto;gap:4px;padding:4px 14px 8px;scrollbar-width:none}
   .mobile-tabs::-webkit-scrollbar{display:none}
-  .m-tab{padding:6px 14px;border-radius:20px;font-size:12px;border:1px solid var(--border);background:var(--card);white-space:nowrap;cursor:pointer}
+  .m-tab,.m-dom{padding:6px 14px;border-radius:20px;font-size:12px;border:1px solid var(--border);background:var(--card);white-space:nowrap;cursor:pointer}
   .m-tab.active{background:var(--cobalt);color:#fff;border-color:var(--cobalt)}
+  .m-dom.active.d{background:var(--dom);color:#fff;border-color:var(--dom)}
+  .m-dom.active.i{background:var(--intl);color:#fff;border-color:var(--intl)}
 }
-@media(min-width:701px){.mobile-tabs{display:none}}
+@media(min-width:701px){.mobile-tabs,.mobile-domain{display:none}}
 </style>
 </head>
 <body>
@@ -164,6 +173,10 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 </div>
 </header>
 
+<div class="mobile-domain" id="mobDomain">
+<button class="m-dom d active" data-d="domestic">🇨🇳 国内</button>
+<button class="m-dom i" data-d="international">🌍 国际</button>
+</div>
 <div class="mobile-tabs" id="mobTabs">
 <button class="m-tab active" data-c="finance">财经</button>
 <button class="m-tab" data-c="politics">政治</button>
@@ -338,6 +351,18 @@ $$('.dom-btn').forEach(b=>b.addEventListener('click',function(){
   state.domain=this.dataset.d;
   $$('.dom-btn').forEach(x=>x.classList.remove('active'));
   this.classList.add('active');
+  // sync mobile domain toggle
+  $$('.m-dom').forEach(x=>{x.classList.remove('active');if(x.dataset.d===state.domain) x.classList.add('active')});
+  loadAll();
+}));
+
+$$('.m-dom').forEach(b=>b.addEventListener('click',function(){
+  if(state.domain===this.dataset.d) return;
+  state.domain=this.dataset.d;
+  $$('.m-dom').forEach(x=>x.classList.remove('active'));
+  this.classList.add('active');
+  // sync desktop domain toggle
+  $$('.dom-btn').forEach(x=>{x.classList.remove('active');if(x.dataset.d===state.domain) x.classList.add('active')});
   loadAll();
 }));
 
