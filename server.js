@@ -19,7 +19,7 @@ app.get('/', function(_, res) {
     health: '/api/health',
     sources: {
       domestic: 'CCTV (news.cctv.com) + Xinhua + PeopleDaily + 12 more',
-      international: 'NewsAPI (40+ sources) + RSS feeds (Nikkei, Yonhap, NHK, SCMP, DefenseNews, TWZ, etc.)',
+      international: 'NewsAPI (40+ sources) + RSS feeds (Yonhap, NHK, SCMP, DefenseNews, TWZ, etc.)',
       total_sources: '45+ Chinese and English news outlets',
       features: '50 items/category, 24h freshness, auto-translate international to Chinese'
     },
