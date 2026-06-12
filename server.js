@@ -63,6 +63,8 @@ app.get('/api/health', function(_, res) {
   res.json({ status: 'ok', version: '3.0.0', uptime: process.uptime() });
 });
 
+
+app.get("/news", function(_, res) { res.sendFile(__dirname + "/hot-news.html"); });
 // 404
 app.use(function(_, res) {
   res.status(404).json({ error: 'Not found', hint: 'Try / for API docs or /api/health' });
