@@ -23,7 +23,7 @@ app.get('/', function(_, res) {
       total_sources: '45+ Chinese and English news outlets',
       features: '50 items/category, 24h freshness, auto-translate international to Chinese'
     },
-    cache: '10 minutes (deploy 1781229235250)'
+    cache: '10 minutes (deploy 1781229521672)'
   });
 });
 
