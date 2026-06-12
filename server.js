@@ -19,14 +19,14 @@ app.get('/', function(_, res) {
     health: '/api/health',
     sources: {
       domestic_finance: '7 HTML scrapers: Caixin, STCN, NBD, 21Jingji, Yicai, XinhuaFortune, CEWeekly',
-      domestic_politics: 'CCTV JSONP + 5 RSS (PeopleDaily, ChinaDaily, ChinaNews) + Huanqiu HTML + FMPRC HTML',
+      domestic_politics: 'CCTV JSONP + 3 RSS (PeopleDaily x2, ChinaNews) + Huanqiu HTML + FMPRC HTML',
       domestic_military: '11 HTML scrapers: MOD, 81cn, XinhuaMil, HuanqiuMil, Cankaoxiaoxi, ThePaper, Guancha, CNRMil, IfengMil, QQMIL, DSTI',
       international: 'NewsAPI (15+ outlets) + 14 RSS feeds (BBC, France24, DW, NYT, SCMP, Asahi, Yonhap, NHK, DefenseNews, WarZone, NavalNews, MarketWatch, NikkeiAsia, Al-Monitor)',
       total_sources: '50+ outlets across 6 categories',
       features: '50 items/category target, 48h freshness, 30-min cache, scored military categorization, auto-translate'
     },
     cache: '30 minutes',
-    principles: 'v4 implements design principles 1-13'
+    principles: 'v4.0.2: removed stale ChinaDaily RSS'
   });
 });
 
